@@ -22,6 +22,7 @@ SoftwareSerial mySerial(RX_PIN , TX_PIN ); // RX, TX
 
 int motor_status = -1;
 int led = 2;
+int light_value = 0.0;
 
 void setup() {
   // Khởi tạo giao tiếp nối tiếp với tốc độ baud là 9600
@@ -51,23 +52,22 @@ void loop() {
 
     // Lấy giá trị nhiệt độ và độ ẩm từ đối tượng JsonDocument
     motor_status = docRecv["motor"];
-    int light_value = docRecv["light_value"];
-
-    if (motor_status) {
-      if (light_value > 700){
-        stepper.step(degreeToSteps(180/2));
-      } else {
-        stepper.step(-degreeToSteps(180/2));
-      }
-    }
+    light_value = docRecv["light_value"];
+    Serial.println(motor_status);
+    Serial.println(light_value);
     // In các giá trị ra màn hình nối tiếp
     digitalWrite(led, int(motor_status));
   }
-
   int value = analogRead(A0);
+  if (motor_status==1) {
+    if (value > 700){
+      stepper.step(degreeToSteps(180/2));
+    } else {
+      stepper.step(-degreeToSteps(180/2));
+    }
+  }
 
   doc["light_value"] = value;
-
   // Chuyển đổi đối tượng JsonDocument thành chuỗi JSON và gửi nó qua cổng nối tiếp ảo
   serializeJson(doc, mySerial);
   mySerial.println();
