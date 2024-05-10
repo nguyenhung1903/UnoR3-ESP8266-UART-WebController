@@ -11,36 +11,31 @@ int led_status = 0;
 
 String  WebPage = {
   "<!DOCTYPE html><html><head>"
-    "<title>LED light control website</title>"
+    "<title>Web realtime - Light Sensor</title>"
+    "<meta charset=\"UTF-8\">"
     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
     "<style>"
     "html {font-family: Helvetica;display: inline-block;margin: 0px auto;text-align: center;}"
     ".button {background-color: #4CAF50;border: none;color: white;padding: 16px 40px;text-decoration: none;font-size: 30px;margin: 2px;cursor: pointer;}"
     ".button2 {background-color: #555555;}</style>"
-    "</head><body><h1>LED light control</h1>"
-    "<p id=\"led_status\"> Light is off </p><br>"
-    "<a href=\"#\" id=\"btnChangeStatus\" class=\"button\">ON</a>"
+    "</head><body>"
+    "<h1><p id=\"serialMonitor\"> None </p><h1><br>"
     "</body><script>"
-    "function changeStatus() {"
-    "    var led_status = document.getElementById('led_status');"
-    "   var btnChangeStatus = document.getElementById('btnChangeStatus');"
-    "    var xhttp3 = new XMLHttpRequest();"
-    "    xhttp3.onreadystatechange = function() {"
-    "        if (this.readyState == 4 && this.status == 200) {"
-    "            if (this.responseText == '1') {"
-    "                led_status.innerHTML = 'Light is on';"
-    "                btnChangeStatus.innerHTML = 'OFF';"
-    "                btnChangeStatus.className = 'button button2';"
-    "            } else {"
-    "                led_status.innerHTML = 'Light is off';"
-    "                btnChangeStatus.innerHTML = 'ON';"
-    "                btnChangeStatus.className = 'button';"
-    "            }"
-    "        }"
-    "    };"
-    "    xhttp3.open('GET', '/changeStatus', true);"
-    "    xhttp3.send();"
-    "}document.getElementById('btnChangeStatus').addEventListener('click', changeStatus);"
+    "window.onload = function() {"
+       "readSerial();"
+    "};"
+    "function readSerial() {"
+    "var serialMonitor = document.getElementById('serialMonitor');"
+    "var xhttp = new XMLHttpRequest();"
+    "xhttp.onreadystatechange = function() {"
+    "if (this.readyState == 4 && this.status == 200) {"
+    "serialMonitor.innerHTML = this.responseText;"
+    "setTimeout(readSerial, 500);"
+    "}"
+    "};"
+    "xhttp.open('GET', 'readSerial', true);"
+    "xhttp.send();"
+    "}"
     "</script></html>"
 };
 
@@ -66,20 +61,14 @@ void setup() {
   server.begin();  // Bắt đầu web server
 }
 
-void handleLED(){
-  if (led_status == 1){
-    digitalWrite(LED, HIGH);
-    led_status = 0;
-    server.send(200, "text/plain", "0");
-  } else if (led_status == 0){
-    digitalWrite(LED, LOW);
-    led_status = 1;
-    server.send(200, "text/plain", "1");
-  }
+void handleReadSerial() {
+  // Gửi giá trị cảm biến về client
+  float light = analogRead(A0);
+  server.send(200, "text/plain", "Giá trị cảm biến ánh sáng: " + String(light));
 }
 
 void setupRoutes() {
-  server.on("/changeStatus", handleLED);
+  server.on("/readSerial", handleReadSerial);
 }
 
 void loop() {
